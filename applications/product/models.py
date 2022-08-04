@@ -1,8 +1,9 @@
 from django.contrib.auth import get_user_model
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
-
 User = get_user_model()
+
 
 class Category(models.Model):
     title = models.TextField(max_length=100)
@@ -27,6 +28,7 @@ class Product(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     amount = models.PositiveIntegerField(default=1)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
+
     # image = models.ImageField(upload_to='products')
 
     def __str__(self):
@@ -36,3 +38,37 @@ class Product(models.Model):
 class Image(models.Model):
     image = models.ImageField(upload_to='products')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
+
+
+class Like(models.Model):
+    """Модель лайков"""
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='likes', verbose_name='Владелец лайка')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='likes', verbose_name='Товар')
+    like = models.BooleanField('лайк', default=False)
+
+    def __str__(self):
+        return f'{self.product}-{self.like}'
+
+
+class Rating(models.Model):
+    '''Модель рейтинга'''
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ratings', verbose_name='Владелец')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='ratings', verbose_name='Продукт')
+    rating = models.SmallIntegerField(
+        validators=[MinValueValidator(1),
+                    MaxValueValidator(5)], default=1
+    )
+
+    def __str__(self):
+        return f'{self.product}-{self.rating}'
+
+
+class Comment(models.Model):
+    '''Модель комментариев'''
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='comments')
+    text = models.TextField()
+    created_at = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.owner}\n{self.created_at}\n{self.text}'
